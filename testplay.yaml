@@ -1,0 +1,35 @@
+---
+- name: Check the OS version
+  hosts: all
+  gather_facts: yes
+
+  tasks:
+  - name: Check the IP address
+    debug: msg="{{ ansible_default_ipv4.gateway }}"
+  - name: Check the relase version
+    debug: msg="{{ ansible_distribution_version }}"
+...
+
+
+---
+- name: Print debug info
+  hosts: localhost
+  vars: 
+    msg: |
+        Ansible Distribution: {{ ansible_distribution }}
+        Ansible Dist Version: {{ ansible_distribution_version }}
+  debug:
+    msg: "{{ msg.split('\n') }}"
+  tags: debug_info
+
+---
+- name: BIGIP test 
+  tasks: 
+  -name: show version
+  bigip_command:
+      commands: show sys version 
+      provider:
+        server: 155.1.15.3
+        password: 9ruShek@l
+        user: root
+  deligate_to: localhost
