@@ -1,0 +1,735 @@
+Building configuration...
+
+Current configuration : 24116 bytes
+!
+! Last configuration change at 19:03:16 UTC Tue Jun 1 2021 by _prdnetcicdcfgsvc
+! NVRAM config last updated at 08:07:44 UTC Thu Aug 5 2021 by prdconfigback
+!
+version 16.12
+no service pad
+service timestamps debug datetime msec
+service timestamps log datetime msec
+service password-encryption
+service call-home
+platform punt-keepalive disable-kernel-core
+!
+hostname aukwanrsw01
+!
+!
+vrf definition Mgmt-vrf
+ !
+ address-family ipv4
+ exit-address-family
+ !
+ address-family ipv6
+ exit-address-family
+!
+logging buffered 100000
+enable secret 9 $14$FbMO$9QI8z0rx/N7c9k$fRMkYzZLu/YkMgPnpwgJchiARkuaJVTtcwZMjA3rwW.
+!
+aaa new-model
+aaa local authentication attempts max-fail 15
+!
+!
+aaa group server tacacs+ CLEARPASS
+ server-private 172.23.85.88 key 7 1400405F3E560E62036161651C
+ server-private 172.23.81.88 key 7 1400405F3E560E62036161651C
+ server-private 172.23.85.89 key 7 0313095F345D050569404B5529
+ server-private 172.23.81.89 key 7 10595B4D374536422B4D787B1A
+ ip tacacs source-interface Vlan2906
+!
+aaa authentication login default local group CLEARPASS
+aaa authentication enable default none
+aaa authorization exec default local if-authenticated
+aaa accounting exec default start-stop group CLEARPASS
+aaa accounting commands 1 default start-stop group CLEARPASS
+aaa accounting commands 15 default start-stop group CLEARPASS
+aaa accounting network default start-stop group CLEARPASS
+!
+!
+!
+!
+!
+!
+aaa session-id common
+boot system switch all flash:packages.conf
+switch 1 provision c9300-24t
+!
+!
+!
+!
+call-home
+ contact-email-addr ITNetworkEngineers@f5.com
+ profile "CiscoTAC-1"
+  active
+  destination transport-method http
+  no destination transport-method email
+ip routing
+!
+!
+!
+!
+!
+ip name-server 192.168.10.1 192.168.11.1
+ip domain lookup source-interface Vlan2906
+ip domain name infra.f5net.com
+!
+!
+!
+login on-success log
+!
+!
+!
+!
+!
+!
+!
+vtp mode off
+no device-tracking logging theft
+!
+flow record f5std-ipv4-flowrecord
+ description Standard NetEng IPv4 flow record
+ match ipv4 tos
+ match ipv4 protocol
+ match ipv4 source address
+ match ipv4 destination address
+ match transport source-port
+ match transport destination-port
+ match interface input
+ collect transport tcp flags
+ collect interface output
+ collect timestamp absolute first
+ collect timestamp absolute last
+ collect counter bytes long
+ collect counter packets long
+!
+!
+flow record f5std-ipv6-flowrecord
+ description Standard NetEng IPv6 flow record
+ match ipv6 traffic-class
+ match ipv6 protocol
+ match ipv6 source address
+ match ipv6 destination address
+ match transport source-port
+ match transport destination-port
+ match interface input
+ collect transport tcp flags
+ collect interface output
+ collect timestamp absolute first
+ collect timestamp absolute last
+ collect counter bytes long
+ collect counter packets long
+!
+!
+flow exporter inmon
+ description Inmon Traffic Sentinel
+ destination 172.23.81.200
+ source Vlan2906
+ transport udp 9985
+!
+!
+flow monitor f5std-ipv4-flowmonitor
+ description Standard IPv4 NetEng flow monitor
+ exporter inmon
+ cache timeout inactive 10
+ cache timeout active 60
+ record f5std-ipv4-flowrecord
+!
+!
+flow monitor f5std-ipv6-flowmonitor
+ description Standard IPv6 NetEng flow monitor
+ exporter inmon
+ cache timeout inactive 10
+ cache timeout active 60
+ record f5std-ipv6-flowrecord
+!
+!
+crypto pki trustpoint SLA-TrustPoint
+ enrollment terminal
+ revocation-check crl
+!
+crypto pki trustpoint TP-self-signed-261998290
+ enrollment selfsigned
+ subject-name cn=IOS-Self-Signed-Certificate-261998290
+ revocation-check none
+ rsakeypair TP-self-signed-261998290
+!
+!
+crypto pki certificate chain SLA-TrustPoint
+ certificate ca 01
+  30820321 30820209 A0030201 02020101 300D0609 2A864886 F70D0101 0B050030
+  32310E30 0C060355 040A1305 43697363 6F312030 1E060355 04031317 43697363
+  6F204C69 63656E73 696E6720 526F6F74 20434130 1E170D31 33303533 30313934
+  3834375A 170D3338 30353330 31393438 34375A30 32310E30 0C060355 040A1305
+  43697363 6F312030 1E060355 04031317 43697363 6F204C69 63656E73 696E6720
+  526F6F74 20434130 82012230 0D06092A 864886F7 0D010101 05000382 010F0030
+  82010A02 82010100 A6BCBD96 131E05F7 145EA72C 2CD686E6 17222EA1 F1EFF64D
+  CBB4C798 212AA147 C655D8D7 9471380D 8711441E 1AAF071A 9CAE6388 8A38E520
+  1C394D78 462EF239 C659F715 B98C0A59 5BBB5CBD 0CFEBEA3 700A8BF7 D8F256EE
+  4AA4E80D DB6FD1C9 60B1FD18 FFC69C96 6FA68957 A2617DE7 104FDC5F EA2956AC
+  7390A3EB 2B5436AD C847A2C5 DAB553EB 69A9A535 58E9F3E3 C0BD23CF 58BD7188
+  68E69491 20F320E7 948E71D7 AE3BCC84 F10684C7 4BC8E00F 539BA42B 42C68BB7
+  C7479096 B4CB2D62 EA2F505D C7B062A4 6811D95B E8250FC4 5D5D5FB8 8F27D191
+  C55F0D76 61F9A4CD 3D992327 A8BB03BD 4E6D7069 7CBADF8B DF5F4368 95135E44
+  DFC7C6CF 04DD7FD1 02030100 01A34230 40300E06 03551D0F 0101FF04 04030201
+  06300F06 03551D13 0101FF04 05300301 01FF301D 0603551D 0E041604 1449DC85
+  4B3D31E5 1B3E6A17 606AF333 3D3B4C73 E8300D06 092A8648 86F70D01 010B0500
+  03820101 00507F24 D3932A66 86025D9F E838AE5C 6D4DF6B0 49631C78 240DA905
+  604EDCDE FF4FED2B 77FC460E CD636FDB DD44681E 3A5673AB 9093D3B1 6C9E3D8B
+  D98987BF E40CBD9E 1AECA0C2 2189BB5C 8FA85686 CD98B646 5575B146 8DFC66A8
+  467A3DF4 4D565700 6ADF0F0D CF835015 3C04FF7C 21E878AC 11BA9CD2 55A9232C
+  7CA7B7E6 C1AF74F6 152E99B7 B1FCF9BB E973DE7F 5BDDEB86 C71E3B49 1765308B
+  5FB0DA06 B92AFE7F 494E8A9E 07B85737 F3A58BE1 1A48A229 C37C1E69 39F08678
+  80DDCD16 D6BACECA EEBC7CF9 8428787B 35202CDC 60E4616A B623CDBD 230E3AFB
+  418616A9 4093E049 4D10AB75 27E86F73 932E35B5 8862FDAE 0275156F 719BB2F0
+  D697DF7F 28
+  	quit
+crypto pki certificate chain TP-self-signed-261998290
+ certificate self-signed 01
+  3082032E 30820216 A0030201 02020101 300D0609 2A864886 F70D0101 05050030
+  30312E30 2C060355 04031325 494F532D 53656C66 2D536967 6E65642D 43657274
+  69666963 6174652D 32363139 39383239 30301E17 0D323130 35303330 32313430
+  345A170D 33303031 30313030 30303030 5A303031 2E302C06 03550403 1325494F
+  532D5365 6C662D53 69676E65 642D4365 72746966 69636174 652D3236 31393938
+  32393030 82012230 0D06092A 864886F7 0D010101 05000382 010F0030 82010A02
+  82010100 C13548BD 6361777A D3E737A7 07D7D8F8 1EF86D8E C7E3F077 553A903E
+  C2CE316B 40896726 25DF32C6 C6E17DD4 36DEF460 6A33C0C2 DE55F233 A5C66879
+  C31D1D8A CF1AF059 7E04A92A 9C324A8B D836EB32 72CF7D4B 8E94ABB7 7BE31CC7
+  913518CA 214DFF4D 7EE95983 91AE3CC6 BE3A8374 9B7B7D19 5EC6DA89 310B401C
+  F708D69B 5442FC80 9EB9F796 F6D795E6 0B9F299C 7071AB00 CB773A85 E80209FE
+  2B318369 806B46AD 1EDE6B3C 9F33CD8B 137E6101 562F89BE E0E6DA76 6FDF5FD8
+  A0EB0482 2C6931A7 E65C1C65 7AE3B5A8 AC465ADF CE6CACDA EB1943FB 2D804794
+  6DF3D31D D10E6D2E 02D8340C F5B0BC65 AC45C274 3FF88908 F0C9EC0B 3433A936
+  C10C0E8D 02030100 01A35330 51300F06 03551D13 0101FF04 05300301 01FF301F
+  0603551D 23041830 16801474 D9073C0D 76499FB0 D3CC3D01 76126C96 A54E2330
+  1D060355 1D0E0416 041474D9 073C0D76 499FB0D3 CC3D0176 126C96A5 4E23300D
+  06092A86 4886F70D 01010505 00038201 0100A23B F6D721D6 F26F3B1E 52317738
+  59E4F862 601138A5 9276EEAF DEC0E891 ADB72E9A A03EC624 72A55E18 EBC3FCC6
+  37E6DF5D 6BDCACE1 808B79D0 E77CFA08 1C428612 D51F09EA F96312DF C27C8DA6
+  B7FE0151 714683A9 47683D15 7ECFCCCB 0920007B 727552FA 4A08C1F9 3A9D3C16
+  7D3871D3 AADF35DA 790A2D05 6DFEBB7F 76FC49B6 7AD7A0F5 A39688B7 A0E44B5E
+  55C47A70 B3D16439 F9890CED 4D34089B 3FD7AC64 69EA5521 BCAC67D4 03A6F4B6
+  3514AA0F 86045FEB 3F285E0C C023EECA EB4A9A78 FC9E47E0 88B4330B 9325CFB9
+  FAE872AD D6FE4F04 0F9CDB13 D411450E 179B4799 D831E178 FE9C95F1 F5256202
+  75F99ADA D7EAF66B 010A6165 98100EF8 347E
+  	quit
+!
+crypto pki certificate pool
+ cabundle nvram:ios_core.p7b
+!
+!
+license boot level network-advantage addon dna-advantage
+license smart transport callhome
+!
+!
+diagnostic bootup level minimal
+!
+spanning-tree mode pvst
+spanning-tree extend system-id
+memory free low-watermark processor 134344
+!
+username rescue privilege 15 secret 9 $14$weo7$jQQ953uYxLPyek$i7FqCS09vsbYx2f.IL9Pz7AxF87pbU9gF6db7bEHSNk
+!
+redundancy
+ mode sso
+!
+!
+!
+!
+!
+transceiver type all
+ monitoring
+!
+vlan 1311
+ name CUP_WAN_PEERING
+!
+vlan 1660
+ name C_WLAN_GUEST
+!
+vlan 2901
+ name WAN_FW_PEERING
+!
+vlan 2902
+ name WAN_DATA_PATH
+!
+vlan 2906
+ name MGMT
+lldp run
+!
+!
+class-map match-any system-cpp-police-ewlc-control
+  description EWLC Control
+class-map match-any system-cpp-police-topology-control
+  description Topology control
+class-map match-any system-cpp-police-sw-forward
+  description Sw forwarding, L2 LVX data packets, LOGGING, Transit Traffic
+class-map match-any system-cpp-default
+  description EWLC Data, Inter FED Traffic
+class-map match-any system-cpp-police-sys-data
+  description Openflow, Exception, EGR Exception, NFL Sampled Data, RPF Failed
+class-map match-any system-cpp-police-punt-webauth
+  description Punt Webauth
+class-map match-any system-cpp-police-l2lvx-control
+  description L2 LVX control packets
+class-map match-any system-cpp-police-forus
+  description Forus Address resolution and Forus traffic
+class-map match-any system-cpp-police-multicast-end-station
+  description MCAST END STATION
+class-map match-any system-cpp-police-high-rate-app
+  description High Rate Applications
+class-map match-any system-cpp-police-multicast
+  description MCAST Data
+class-map match-any system-cpp-police-l2-control
+  description L2 control
+class-map match-any system-cpp-police-dot1x-auth
+  description DOT1X Auth
+class-map match-any system-cpp-police-data
+  description ICMP redirect, ICMP_GEN and BROADCAST
+class-map match-any system-cpp-police-stackwise-virt-control
+  description Stackwise Virtual OOB
+class-map match-any non-client-nrt-class
+class-map match-any system-cpp-police-routing-control
+  description Routing control and Low Latency
+class-map match-any system-cpp-police-protocol-snooping
+  description Protocol snooping
+class-map match-any system-cpp-police-dhcp-snooping
+  description DHCP snooping
+class-map match-any system-cpp-police-ios-routing
+  description L2 control, Topology control, Routing control, Low Latency
+class-map match-any system-cpp-police-system-critical
+  description System Critical and Gold Pkt
+class-map match-any system-cpp-police-ios-feature
+  description ICMPGEN,BROADCAST,ICMP,L2LVXCntrl,ProtoSnoop,PuntWebauth,MCASTData,Transit,DOT1XAuth,Swfwd,LOGGING,L2LVXData,ForusTraffic,ForusARP,McastEndStn,Openflow,Exception,EGRExcption,NflSampled,RpfFailed
+!
+policy-map system-cpp-policy
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+!
+interface Port-channel1
+ description [TO AUKCUPSW01 Po1] CID: QS220-FANSH22-F5-QINQ-SV0900 (DFAS 300065746)
+ switchport trunk allowed vlan 1311,1660
+ switchport mode trunk
+!
+interface GigabitEthernet0/0
+ vrf forwarding Mgmt-vrf
+ no ip address
+ shutdown
+ negotiation auto
+!
+interface GigabitEthernet1/0/1
+ description [To AUKCUPSW01 Gi1/0/1] CID: QS220-FANSH22-F5-QINQ-SV0900 (DFAS 300065746)
+ switchport trunk allowed vlan 1311,1660
+ switchport mode trunk
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+ channel-group 1 mode active
+!
+interface GigabitEthernet1/0/2
+ description [To AUKCUPSW01 Gi2/0/1] CID: QS220-FANSH22-F5-QINQ-SV0900 (DFAS 300065746)
+ switchport trunk allowed vlan 1311,1660
+ switchport mode trunk
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+ channel-group 1 mode active
+!
+interface GigabitEthernet1/0/3
+ description [To AUKCIPPAFW01 E1/2]
+ switchport trunk allowed vlan 1660,2901
+ switchport mode trunk
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/4
+ description [To AUKCIPPAFW02 E1/2]
+ switchport trunk allowed vlan 1660,2901
+ switchport mode trunk
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/5
+ description [To AUKWANMPLSRTR01 Gi0/0]
+ switchport access vlan 2902
+ switchport mode access
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/6
+ description [To AUKWANVPNRTR01 Gi0/0]
+ switchport access vlan 2902
+ switchport mode access
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/7
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/8
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/9
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/10
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/11
+ description [To AUKWANCON01]
+ switchport access vlan 2906
+ switchport mode access
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/12
+ description [To AUKWANMPLSRTR01 Gi0/1]
+ switchport access vlan 2906
+ switchport mode access
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/13
+ description [To AUKWANVPNRTR01 Gi0/1]
+ switchport access vlan 2906
+ switchport mode access
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/14
+ description [To AUKEXTSW01 Gi1/0/11]
+ switchport access vlan 2906
+ switchport mode access
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/15
+ description [To AUKCIPPAFW01 MGMT]
+ switchport access vlan 2906
+ switchport mode access
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/16
+ description [To AUKCIPPAFW02 MGMT]
+ switchport access vlan 2906
+ switchport mode access
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/17
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/18
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/19
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/20
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/21
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/22
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/23
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/0/24
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/1/1
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/1/2
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/1/3
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface GigabitEthernet1/1/4
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface TenGigabitEthernet1/1/1
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface TenGigabitEthernet1/1/2
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface TenGigabitEthernet1/1/3
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface TenGigabitEthernet1/1/4
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface TenGigabitEthernet1/1/5
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface TenGigabitEthernet1/1/6
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface TenGigabitEthernet1/1/7
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface TenGigabitEthernet1/1/8
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface FortyGigabitEthernet1/1/1
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface FortyGigabitEthernet1/1/2
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface TwentyFiveGigE1/1/1
+!
+interface TwentyFiveGigE1/1/2
+!
+interface AppGigabitEthernet1/0/1
+ ip flow monitor f5std-ipv4-flowmonitor input
+ ipv6 flow monitor f5std-ipv6-flowmonitor input
+!
+interface Vlan1
+ no ip address
+!
+interface Vlan1311
+ description [AUCCUPSW01--AUKWANRSW01]
+ ip address 172.17.226.30 255.255.255.248
+!
+interface Vlan2901
+ description [AUKWANRSW01--AUKCIPPAFW]
+ ip address 172.17.226.17 255.255.255.248
+!
+interface Vlan2902
+ description [WAN DATA PATH]
+ ip address 172.17.226.35 255.255.255.248
+ ip ospf 2 area 0
+!
+interface Vlan2906
+ description [MGMT]
+ ip address 172.17.226.129 255.255.255.224
+!
+router ospf 2
+ router-id 172.17.226.35
+ log-adjacency-changes detail
+ nsf cisco
+ redistribute static tag 226 route-map RM-AUK-SUBNETS
+ distribute-list route-map ROUTES-FROM-DMVPN in
+ distance 250
+!
+router bgp 65026
+ bgp log-neighbor-changes
+ timers bgp 10 30
+ neighbor 172.17.226.33 remote-as 65026
+ neighbor 172.17.226.33 description iBGP_PEERING_WITH_AUKWANMPLSRTR01
+ !
+ address-family ipv4
+  redistribute static route-map RM-AUK-SUBNETS
+  neighbor 172.17.226.33 activate
+  neighbor 172.17.226.33 next-hop-self
+  neighbor 172.17.226.33 soft-reconfiguration inbound
+ exit-address-family
+!
+ip forward-protocol nd
+no ip http server
+ip http authentication local
+no ip http secure-server
+ip http client source-interface Vlan2906
+ip route 0.0.0.0 0.0.0.0 172.17.226.22 name DEFAULT_ROUTE
+ip route 172.16.226.0 255.255.254.0 172.17.226.25 name ROUTE_TO_VOICE_&_WIFIVE_SUBNET
+ip route 172.17.226.0 255.255.255.0 Null0 name FOR_SUMMARY_ROUTE
+ip route 172.17.226.0 255.255.255.240 172.17.226.22 name ROUTE_TO_EXTERNAL_SUBNET
+ip route 192.168.226.0 255.255.255.0 172.17.226.25 name ROUTE_TO_USER_SUBNET
+ip ssh version 2
+ip scp server enable
+!
+!
+ip access-list standard snmp-permit
+ 10 permit 172.17.226.128 0.0.0.31
+ 20 permit 172.23.81.0 0.0.0.255
+ 30 permit 172.23.85.0 0.0.0.255
+ 40 permit 172.23.89.0 0.0.0.255
+ip access-list standard ssh-access-in
+ 10 permit 172.17.226.128 0.0.0.31
+ 20 permit 172.23.81.0 0.0.0.255
+ 30 permit 172.23.85.0 0.0.0.255
+ 40 permit 172.23.89.0 0.0.0.255
+!
+!
+!
+ip prefix-list AUK-SUBNETS seq 5 permit 192.168.226.0/24
+ip prefix-list AUK-SUBNETS seq 10 permit 172.16.226.0/23
+ip prefix-list AUK-SUBNETS seq 15 permit 172.17.226.0/24
+logging host 172.23.241.4
+logging host 172.23.81.18
+!
+route-map RM-AUK-SUBNETS permit 10
+ match ip address prefix-list AUK-SUBNETS
+!
+route-map ROUTES-FROM-DMVPN permit 10
+ match tag 651101111
+!
+!
+snmp-server group SWRead v3 priv read SWRead access snmp-permit
+snmp-server group SNMPRead v3 priv read SNMPRead access snmp-permit
+snmp-server view SWRead iso included
+snmp-server view SNMPRead iso included
+snmp-server enable traps snmp authentication linkdown linkup coldstart warmstart
+snmp-server enable traps flowmon
+snmp-server enable traps entity-perf throughput-notif
+snmp-server enable traps call-home message-send-fail server-fail
+snmp-server enable traps tty
+snmp-server enable traps ospf state-change
+snmp-server enable traps ospf errors
+snmp-server enable traps ospf retransmit
+snmp-server enable traps ospf lsa
+snmp-server enable traps ospf cisco-specific state-change nssa-trans-change
+snmp-server enable traps ospf cisco-specific state-change shamlink interface
+snmp-server enable traps ospf cisco-specific state-change shamlink neighbor
+snmp-server enable traps ospf cisco-specific errors
+snmp-server enable traps ospf cisco-specific retransmit
+snmp-server enable traps ospf cisco-specific lsa
+snmp-server enable traps eigrp
+snmp-server enable traps auth-framework sec-violation
+snmp-server enable traps rep
+snmp-server enable traps vtp
+snmp-server enable traps vlancreate
+snmp-server enable traps vlandelete
+snmp-server enable traps port-security
+snmp-server enable traps license
+snmp-server enable traps smart-license
+snmp-server enable traps cpu threshold
+snmp-server enable traps memory bufferpeak
+snmp-server enable traps stackwise
+snmp-server enable traps udld link-fail-rpt
+snmp-server enable traps udld status-change
+snmp-server enable traps fru-ctrl
+snmp-server enable traps flash insertion removal lowspace
+snmp-server enable traps energywise
+snmp-server enable traps power-ethernet police
+snmp-server enable traps entity
+snmp-server enable traps pw vc
+snmp-server enable traps mvpn
+snmp-server enable traps envmon
+snmp-server enable traps cef resource-failure peer-state-change peer-fib-state-change inconsistency
+snmp-server enable traps lisp
+snmp-server enable traps isis
+snmp-server enable traps ipsla
+snmp-server enable traps entity-diag boot-up-fail hm-test-recover hm-thresh-reached scheduled-test-fail
+snmp-server enable traps bfd
+snmp-server enable traps ike policy add
+snmp-server enable traps ike policy delete
+snmp-server enable traps ike tunnel start
+snmp-server enable traps ike tunnel stop
+snmp-server enable traps ipsec cryptomap add
+snmp-server enable traps ipsec cryptomap delete
+snmp-server enable traps ipsec cryptomap attach
+snmp-server enable traps ipsec cryptomap detach
+snmp-server enable traps ipsec tunnel start
+snmp-server enable traps ipsec tunnel stop
+snmp-server enable traps ipsec too-many-sas
+snmp-server enable traps config-copy
+snmp-server enable traps config
+snmp-server enable traps config-ctid
+snmp-server enable traps dhcp
+snmp-server enable traps event-manager
+snmp-server enable traps hsrp
+snmp-server enable traps ipmulticast
+snmp-server enable traps msdp
+snmp-server enable traps ospfv3 state-change
+snmp-server enable traps ospfv3 errors
+snmp-server enable traps pim neighbor-change rp-mapping-change invalid-pim-message
+snmp-server enable traps bridge newroot topologychange
+snmp-server enable traps stpx inconsistency root-inconsistency loop-inconsistency
+snmp-server enable traps syslog
+snmp-server enable traps bgp
+snmp-server enable traps bgp cbgp2
+snmp-server enable traps nhrp nhs
+snmp-server enable traps nhrp nhc
+snmp-server enable traps nhrp nhp
+snmp-server enable traps nhrp quota-exceeded
+snmp-server enable traps mpls rfc ldp
+snmp-server enable traps mpls ldp
+snmp-server enable traps mpls rfc traffic-eng
+snmp-server enable traps mpls traffic-eng
+snmp-server enable traps mpls fast-reroute protected
+snmp-server enable traps local-auth
+snmp-server enable traps vlan-membership
+snmp-server enable traps errdisable
+snmp-server enable traps rf
+snmp-server enable traps transceiver all
+snmp-server enable traps bulkstat collection transfer
+snmp-server enable traps mac-notification change move threshold
+snmp-server enable traps vrfmib vrf-up vrf-down vnet-trunk-up vnet-trunk-down
+snmp-server enable traps mpls vpn
+snmp-server enable traps mpls rfc vpn
+snmp-server host 172.23.81.18 version 3 priv swmonitor
+!
+!
+!
+control-plane
+ service-policy input system-cpp-policy
+!
+banner login ^C
+Login with your AD account
+^C
+banner motd ^C
+YOU ARE ACCESSING A F5 NETWORKS, INC. (F5) INFORMATION SYSTEM THAT IS PROVIDED FOR F5 AUTHORIZED USE ONLY.
+UNAUTHORIZED USE COLLECTED DURING MONITORING MAY BE USED FOR ADMINISTRATIVE, CRIMINAL, OR OTHER ACTION.
+^C
+!
+line con 0
+ stopbits 1
+line vty 0 4
+ access-class ssh-access-in in vrf-also
+ privilege level 15
+ transport input ssh
+line vty 5 15
+ access-class ssh-access-in in vrf-also
+ privilege level 15
+ transport input ssh
+!
+ntp server 172.23.193.2
+ntp server 192.168.204.11
+ntp server 172.23.225.133
+ntp server 172.23.241.134
+!
+!
+!
+!
+!
+!
+end
